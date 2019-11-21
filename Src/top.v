@@ -327,8 +327,39 @@ module top(
         end
     end
 
-    /*    */
-    // TODO
+    /*  pc branch mux control AND   */
+    assign pc_src_mem = cu_branch_mem & alu_zero_mem;
+
+    /*  ram  */
+    assign ram_we = cu_mem_write_mem;
+    assign ram_addr = alu_result_mem;
+    assign ram_write = ram_write_data_mem;
+    assign ram_read_mem = ram_read;
+
+    /*  MEM/WB Register  */
+    always @(posedge clk or negedge reset_n)
+	begin
+        if(!reset_n)
+        begin
+            cu_reg_write_wb <= 1'b0;
+            cu_mem_to_reg_wb <= 1'b0;
+            alu_result_wb <= 32'b0;
+            ram_read_wb <= 32'h0;
+            write_addr_wb <= 5'h0;
+        end
+        else
+        begin
+            cu_reg_write_wb <= cu_reg_write_mem;
+            cu_mem_to_reg_wb <= cu_mem_to_reg_mem;
+            alu_result_wb <= alu_result_mem;
+            ram_read_wb <= ram_read_mem;
+            write_addr_wb <= write_addr_mem;
+        end
+    end
+
+    /*  writeback result mux  */
+    assign result_wb = cu_mem_to_reg_wb ? ram_read_wb : alu_result_wb;
+
 
     // alu to ram
     assign ram_addr = alu_result;
