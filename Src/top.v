@@ -115,51 +115,220 @@ module top(
         .terminal_bus   (   terminal_bus    )
     );
 
+    /*  IF Signal */
     wire [10:0] pc;
-    reg [10:0] pc_d = 11'h0;
-    wire pc_src;
-    wire [10:0] pc_branch;
-    wire [10:0] pc_plus4;
+    reg [10:0] pc_if = 11'h0;
+    wire [10:0] pc_plus4_if;
+    wire [31:0] instr_if;
 
-    // pc
-    assign pc_src = cu_branch & alu_zero;
-    assign pc = pc_src ? pc_branch : pc_plus4;
-    assign pc_plus4 = pc_d + 11'h4;
+    /*  ID Signal  */
+    reg [31:0] instr_id;
+    reg [10:0] pc_plus4_id;
+    wire cu_reg_write_id;
+    wire cu_reg_dst_id;
+    wire cu_alu_src_id;
+    wire cu_branch_id;
+    wire cu_mem_write_id;
+    wire cu_mem_to_reg_id;
+    wire [2:0] cu_alu_control_id;
+    wire [31:0] reg_read1_id;
+    wire [31:0] reg_read2_id;
+    wire [4:0] write_addra_id;
+    wire [4:0] write_addrb_id;
+    wire [31:0] signimm_id;
 
-    // pc_ff
+    /*  EX Signal  */
+    reg cu_reg_write_ex;
+    reg cu_reg_dst_ex;
+    reg cu_alu_src_ex;
+    reg cu_branch_ex;
+    reg cu_mem_write_ex;
+    reg cu_mem_to_reg_ex;
+    reg [2:0] cu_alu_control_ex;
+    reg [31:0] reg_read1_ex;
+    reg [31:0] reg_read2_ex;
+    reg [4:0] write_addra_ex;
+    reg [4:0] write_addrb_ex;
+    reg [31:0] signimm_ex;
+    reg [10:0] pc_plus4_ex;
+    wire [31:0] src_a_ex;
+    wire [31:0] src_b_ex;
+    wire [31:0] ram_write_data_ex;
+    wire [4:0] write_addr_ex;
+    wire alu_zero_ex;
+    wire [31:0] alu_result_ex;
+    wire [10:0] pc_branch_adder_ex;
+
+    /*  MEM Signal  */
+    reg cu_reg_write_mem;
+    reg cu_mem_to_reg_mem;
+    reg cu_mem_write_mem;
+    reg cu_branch_mem;
+    reg alu_zero_mem;
+    reg [31:0] alu_result_mem;
+    reg [31:0] ram_write_data_mem;
+    reg [4:0] write_addr_mem;
+    reg [10:0] pc_branch_mem;
+    wire pc_src_mem;
+    wire ram_read_mem;
+
+    /*  WB Signal  */
+    reg cu_reg_write_wb;
+    reg cu_mem_to_reg_wb;
+    reg [31:0] alu_result_wb;
+    reg [31:0] ram_read_wb;
+    reg [4:0] write_addr_wb;
+    wire [31:0] result_wb;
+
+    /*  pc branch mux  */
+    assign pc = pc_src_mem ? pc_branch_mem : pc_plus4_if;
+
+    /*  PC Register  */
     always @(posedge clk or negedge reset_n)
 	begin
         if(!reset_n)
-			pc_d <= 11'h0;
+			pc_if <= 11'h0;
         else
-			pc_d <= pc;
+			pc_if <= pc;
     end
 
-    assign rom_addr = pc_d;
+    /*  pc plus4 adder  */
+    assign pc_plus4_if = pc_if + 11'h4;
 
-    wire [31:0] instr = rom_dout;
+    /*  rom  */
+    assign rom_addr = pc_if;
+    assign instr_if = rom_dout;
 
-    // rom to cu
-    assign cu_op    = instr[31:26];
-    assign cu_funct = instr[5:0];
+    /*  IF/ID Register  */
+    always @(posedge clk or negedge reset_n)
+	begin
+        if(!reset_n)
+        begin
+			instr_id <= 32'h0;
+            pc_plus4_id <= 11'h0;
+        end
+        else
+        begin
+			instr_id <= instr_if;
+            pc_plus4_id <= pc_plus4_if;
+        end
+    end
 
-    // rom to reg
-    wire [31:0] result;
+    /*  cu  */
+    assign cu_op    = instr_id[31:26];
+    assign cu_funct = instr_id[5:0];
+    assign cu_reg_write_id = cu_reg_write;
+    assign cu_mem_to_reg_id = cu_mem_to_reg;
+    assign cu_mem_write_id = cu_mem_write;
+    assign cu_branch_id = cu_branch;
+    assign cu_alu_control_id = cu_alu_control;
+    assign cu_alu_src_id = cu_alu_src;
+    assign cu_reg_dst_id = cu_reg_dst;
 
-    assign reg_addr1    = instr[25:21];
-    assign reg_addr2    = instr[20:16];
-    assign reg_addr3    = cu_reg_dst ? instr[15:11] : instr[20:16];
-    assign reg_we3      = cu_reg_write;
-    assign reg_write3   = result;
+    /*  reg  */
+    assign reg_addr1    = instr_id[25:21];
+    assign reg_addr2    = instr_id[20:16];
+    assign reg_addr3    = write_addr_wb;
+    assign reg_we3      = cu_reg_write_wb;
+    assign reg_write3   = result_wb;
+    assign reg_read1_id = reg_read1;
+    assign reg_read2_id = reg_read2;
 
-    // sign extend
-    wire [31:0] signImm = {{16{instr[15]}},instr[15:0]};
-    assign pc_branch = pc_plus4 + (signImm << 2'd2);
+    /*  write address mux signal  */
+    assign write_addra_id = instr_id[20:16];
+    assign write_addrb_id = instr_id[15:11];
 
-    // reg to alu
-    assign alu_A = reg_read1;
-    assign alu_B = cu_alu_src ? signImm : reg_read2;
-    assign alu_F = cu_alu_control;
+    /*  sign extend  */
+    assign signimm_id = {{16{instr_id[15]}},instr_id[15:0]};
+
+    /*  ID/EX Register  */
+    always @(posedge clk or negedge reset_n)
+	begin
+        if(!reset_n)
+        begin
+            cu_reg_write_ex <= 1'b0;
+            cu_mem_to_reg_ex <= 1'b0;
+            cu_mem_write_ex <= 1'b0;
+            cu_branch_ex <= 1'b0;
+            cu_alu_control_ex <= 3'b0;
+            cu_alu_src_ex <= 1'b0;
+            cu_reg_dst_ex <= 1'b0;
+            reg_read1_ex <= 32'b0;
+            reg_read2_ex <= 32'b0;
+            write_addra_ex <= 5'b0;
+            write_addrb_ex <= 5'b0;
+            signimm_ex <= 32'b0;
+            pc_plus4_ex <= 11'b0;
+        end
+        else
+        begin
+            cu_reg_write_ex <= cu_reg_write_id;
+            cu_mem_to_reg_ex <= cu_mem_to_reg_id;
+            cu_mem_write_ex <= cu_mem_write_id;
+            cu_branch_ex <= cu_branch_id;
+            cu_alu_control_ex <= cu_alu_control_id;
+            cu_alu_src_ex <= cu_alu_src_id;
+            cu_reg_dst_ex <= cu_reg_dst_id;
+            reg_read1_ex <= reg_read1_id;
+            reg_read2_ex <= reg_read2_id;
+            write_addra_ex <= write_addra_id;
+            write_addrb_ex <= write_addrb_id;
+            signimm_ex <= signimm_id;
+            pc_plus4_ex <= pc_plus4_id;
+        end
+    end
+
+    /*  reg address destination mux  */
+    assign write_addr_ex = cu_reg_dst_ex ? write_addrb_ex : write_addra_ex;
+
+    /*  alu src mux  */
+    assign src_a_ex = reg_read1_ex;
+    assign src_b_ex = cu_alu_src_ex ? signimm_ex : reg_read2_ex;
+
+    /*  alu  */
+    assign alu_A = src_a_ex;
+    assign alu_B = src_b_ex;
+    assign alu_F = cu_alu_control_ex;
+    assign alu_zero_ex = alu_zero;
+    assign alu_result_ex = alu_result;
+
+    /*  ram write data signal  */
+    assign ram_write_data_ex = reg_read2_ex;
+
+    /*  branch adder  */
+    assign pc_branch_adder_ex = pc_plus4_ex + (signimm_ex << 2'd2);
+
+    /*  EX/MEM Register  */
+    always @(posedge clk or negedge reset_n)
+	begin
+        if(!reset_n)
+        begin
+            cu_reg_write_mem <= 1'b0;
+            cu_mem_to_reg_mem <= 1'b0;
+            cu_mem_write_mem <= 1'b0;
+            cu_branch_mem <= 1'b0;
+            alu_zero_mem <= 1'b0;
+            alu_result_mem <= 32'h0;
+            ram_write_data_mem <= 32'h0;
+            write_addr_mem <= 5'h0;
+            pc_branch_mem <= 11'h0;
+        end
+        else
+        begin
+            cu_reg_write_mem <= cu_reg_write_ex;
+            cu_mem_to_reg_mem <= cu_mem_to_reg_ex;
+            cu_mem_write_mem <= cu_mem_write_ex;
+            cu_branch_mem <= cu_branch_ex;
+            alu_zero_mem <= alu_zero_ex;
+            alu_result_mem <= alu_result_ex;
+            ram_write_data_mem <= ram_write_data_ex;
+            write_addr_mem <= write_addr_ex;
+            pc_branch_mem <= pc_branch_adder_ex;
+        end
+    end
+
+    /*    */
+    // TODO
 
     // alu to ram
     assign ram_addr = alu_result;
