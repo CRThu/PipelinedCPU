@@ -4,3 +4,10 @@
 
 # Quartus
 *.v.bak
+/quartus/ep4ce15_crt8008/*.qws
+/quartus/ep4ce15_crt8008/.qsys_edit/
+/quartus/ep4ce15_crt8008/db/
+/quartus/ep4ce15_crt8008/greybox_tmp/
+/quartus/ep4ce15_crt8008/incremental_db/
+/quartus/ep4ce15_crt8008/output_files/
+/quartus/ep4ce15_crt8008/simulation/

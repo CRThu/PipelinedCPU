@@ -91,6 +91,18 @@ module cu(
                     alu_op = 2'b00;
                 end
                 
+                /*  NEW : NOP  */
+                6'b111111:
+                begin
+                    reg_write = 0;
+                    reg_dst = 0;    // X
+                    alu_src = 0;    // X
+                    branch = 0;
+                    mem_write = 0;
+                    mem_to_reg = 0; // X
+                    alu_op = 2'b00; // X
+                end
+                
                 default:
                 begin
                     reg_write = 1'hx;

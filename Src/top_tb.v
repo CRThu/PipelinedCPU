@@ -1,6 +1,6 @@
 `timescale 1ns/100ps
 
-//`define __QUARTUS__
+`define __QUARTUS__
 `ifndef __QUARTUS__
     `include "./Src/top.v"
 `endif
@@ -52,7 +52,7 @@ module top_tb;
 
         `ifndef __QUARTUS__
             `ifdef __ROM_TEST_INSTR__
-                #200 $finish;
+                #1200 $finish;
             `else
             `ifdef __ROM_WAWEI_TERMINAL__
                 #4500 $finish;
@@ -60,7 +60,7 @@ module top_tb;
             `endif
         `else
             `ifdef __ROM_TEST_INSTR__
-                #200 $stop;
+                #1200 $stop;
             `else
             `ifdef __ROM_WAWEI_TERMINAL__
                 #4500 $stop;

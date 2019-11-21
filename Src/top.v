@@ -1,4 +1,4 @@
-//`define __QUARTUS__
+`define __QUARTUS__
 `ifndef __QUARTUS__
     `include "./Src/alu.v"
     `include "./Src/cu.v"
@@ -170,7 +170,7 @@ module top(
     reg [4:0] write_addr_mem;
     reg [10:0] pc_branch_mem;
     wire pc_src_mem;
-    wire ram_read_mem;
+    wire [31:0] ram_read_mem;
 
     /*  WB Signal  */
     reg cu_reg_write_wb;
@@ -359,14 +359,5 @@ module top(
 
     /*  writeback result mux  */
     assign result_wb = cu_mem_to_reg_wb ? ram_read_wb : alu_result_wb;
-
-
-    // alu to ram
-    assign ram_addr = alu_result;
-    assign ram_write = reg_read2;
-    assign ram_we = cu_mem_write;
-
-    assign result = cu_mem_to_reg ? ram_read : alu_result;
-
 
 endmodule // top
