@@ -54,14 +54,19 @@ module top(
     wire    [31:0]  ram_write       ;
 
     // terminal
+    wire            terminal_we     ;
+    wire    [31:0]  terminal_addr   ;
+    wire    [31:0]  terminal_read   ;
+    wire    [31:0]  terminal_write  ;
     // wire    [7:0]   terminal_bus    ;
 
-
     rom  u_rom (
+        .clk            (   clk             ),
+        .aclr           (   ~reset_n        ),
         .dout           (   rom_dout        ),
         .addr           (   rom_addr        )
     );
-
+    
     cu  u_cu (
         .reset_n        (   reset_n         ),
         
@@ -99,7 +104,6 @@ module top(
 
     ram  u_ram (
         .clk            (   clk             ),
-        .reset_n        (   reset_n         ),
         .we             (   ram_we          ),
         .addr           (   ram_addr        ),
         .data_read      (   ram_read        ),
@@ -109,9 +113,9 @@ module top(
     terminal u_terminal (
         .clk            (   clk             ),
         .reset_n        (   reset_n         ),
-        .we             (   ram_we          ),
-        .addr           (   ram_addr        ),
-        .data_write     (   ram_write       ),
+        .we             (   terminal_we     ),
+        .addr           (   terminal_addr   ),
+        .data_write     (   terminal_write  ),
         .terminal_bus   (   terminal_bus    )
     );
 
@@ -196,7 +200,9 @@ module top(
     assign pc_plus4_if = pc_if + 11'h4;
 
     /*  rom  */
-    assign rom_addr = pc_if;
+    // there is a ff in sprom
+    assign rom_addr = pc;
+    //assign rom_addr = pc_if;
     assign instr_if = rom_dout;
 
     /*  IF/ID Register  */
@@ -331,10 +337,17 @@ module top(
     assign pc_src_mem = cu_branch_mem & alu_zero_mem;
 
     /*  ram  */
-    assign ram_we = cu_mem_write_mem;
-    assign ram_addr = alu_result_mem;
-    assign ram_write = ram_write_data_mem;
+    // there is a ff in spram
+    assign ram_we = cu_mem_write_ex;
+    assign ram_addr = alu_result_ex;
+    assign ram_write = ram_write_data_ex;
     assign ram_read_mem = ram_read;
+    
+    /*  terminal  */
+    assign terminal_we = cu_mem_write_mem;
+    assign terminal_addr = alu_result_mem;
+    assign terminal_write = ram_write_data_mem;
+    
 
     /*  MEM/WB Register  */
     always @(posedge clk or negedge reset_n)
