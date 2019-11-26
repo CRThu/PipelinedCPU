@@ -6,6 +6,7 @@
     `include "./Src/register.v"
     `include "./Src/rom.v"
     `include "./Src/terminal.v"
+    `include "./Src/hu.v"
 `endif
 
 module top(
@@ -14,11 +15,11 @@ module top(
     output  wire    [7:0]   terminal_bus
 );
 
-    // ROM
+    /*  ROM  */
     wire    [31:0]  rom_dout        ;
     wire    [10:0]  rom_addr        ;
 
-    // Control Unit
+    /*  Control Unit  */
     wire    [5:0]   cu_op           ;
     wire    [5:0]   cu_funct        ;
     wire            cu_reg_write    ;
@@ -29,7 +30,7 @@ module top(
     wire            cu_mem_to_reg   ;
     wire    [2:0]   cu_alu_control  ;
 
-    // Register Block
+    /*  Register Block  */
     wire    [4:0]   reg_addr1       ;
     wire    [31:0]  reg_read1       ;
 
@@ -40,30 +41,100 @@ module top(
     wire    [4:0]   reg_addr3       ;
     wire    [31:0]  reg_write3      ;
     
-    // ALU
+    /*  ALU  */
     wire    [31:0]  alu_A           ;
     wire    [31:0]  alu_B           ;
     wire    [2:0]   alu_F           ;
     wire    [31:0]  alu_result      ;
     wire            alu_zero        ;
 
-    // RAM
+    /*  RAM  */
     wire            ram_we          ;
     wire    [31:0]  ram_addr        ;
     wire    [31:0]  ram_read        ;
     wire    [31:0]  ram_write       ;
     
-    // Hazard Unit
+    /*  Hazard Unit  */
     wire    [1:0]   hu_forward_a    ;
     wire    [1:0]   hu_forward_b    ;
 
-    // terminal
+    /*  terminal  */
     wire            terminal_we     ;
     wire    [31:0]  terminal_addr   ;
     wire    [31:0]  terminal_read   ;
     wire    [31:0]  terminal_write  ;
     // wire    [7:0]   terminal_bus    ;
 
+    /*  IF Signal */
+    wire [10:0] pc;
+    reg [10:0] pc_if = 11'h0;
+    wire [10:0] pc_plus4_if;
+    wire [31:0] instr_if;
+
+    /*  ID Signal  */
+    reg [31:0] instr_id;
+    reg [10:0] pc_plus4_id;
+    wire cu_reg_write_id;
+    wire cu_reg_dst_id;
+    wire cu_alu_src_id;
+    wire cu_branch_id;
+    wire cu_mem_write_id;
+    wire cu_mem_to_reg_id;
+    wire [2:0] cu_alu_control_id;
+    wire [31:0] reg_read1_id;
+    wire [31:0] reg_read2_id;
+    wire [4:0] rs_id;   // first source register
+    wire [4:0] rt_id;   // second source register
+    wire [4:0] rd_id;   // destination register
+    wire [31:0] signimm_id;
+
+    /*  EX Signal  */
+    reg cu_reg_write_ex;
+    reg cu_reg_dst_ex;
+    reg cu_alu_src_ex;
+    reg cu_branch_ex;
+    reg cu_mem_write_ex;
+    reg cu_mem_to_reg_ex;
+    reg [2:0] cu_alu_control_ex;
+    reg [31:0] reg_read1_ex;
+    reg [31:0] reg_read2_ex;
+    reg [4:0] rs_ex;
+    reg [4:0] rt_ex;
+    reg [4:0] rd_ex;
+    reg [31:0] signimm_ex;
+    reg [10:0] pc_plus4_ex;
+    reg [31:0] hu_forward_a_muxout;
+    reg [31:0] hu_forward_b_muxout;
+    wire [31:0] src_a_ex;
+    wire [31:0] src_b_ex;
+    wire [31:0] ram_write_data_ex;
+    wire [4:0] write_reg_ex;
+    wire alu_zero_ex;
+    wire [31:0] alu_result_ex;
+    wire [10:0] pc_branch_adder_ex;
+
+    /*  MEM Signal  */
+    reg cu_reg_write_mem;
+    reg cu_mem_to_reg_mem;
+    reg cu_mem_write_mem;
+    reg cu_branch_mem;
+    reg alu_zero_mem;
+    reg [31:0] alu_result_mem;
+    reg [31:0] ram_write_data_mem;
+    reg [4:0] write_reg_mem;
+    reg [10:0] pc_branch_mem;
+    wire pc_src_mem;
+    wire [31:0] ram_read_mem;
+
+    /*  WB Signal  */
+    reg cu_reg_write_wb;
+    reg cu_mem_to_reg_wb;
+    reg [31:0] alu_result_wb;
+    reg [31:0] ram_read_wb;
+    reg [4:0] write_reg_wb;
+    wire [31:0] result_wb;
+
+    /*  Instance  */
     rom  u_rom (
         .clk            (   clk             ),
         .aclr           (   ~reset_n        ),
@@ -123,72 +194,16 @@ module top(
         .terminal_bus   (   terminal_bus    )
     );
 
-    /*  IF Signal */
-    wire [10:0] pc;
-    reg [10:0] pc_if = 11'h0;
-    wire [10:0] pc_plus4_if;
-    wire [31:0] instr_if;
-
-    /*  ID Signal  */
-    reg [31:0] instr_id;
-    reg [10:0] pc_plus4_id;
-    wire cu_reg_write_id;
-    wire cu_reg_dst_id;
-    wire cu_alu_src_id;
-    wire cu_branch_id;
-    wire cu_mem_write_id;
-    wire cu_mem_to_reg_id;
-    wire [2:0] cu_alu_control_id;
-    wire [31:0] reg_read1_id;
-    wire [31:0] reg_read2_id;
-    wire [4:0] rs_id;   // first source register
-    wire [4:0] rt_id;   // second source register
-    wire [4:0] rd_id;   // destination register
-    wire [31:0] signimm_id;
-
-    /*  EX Signal  */
-    reg cu_reg_write_ex;
-    reg cu_reg_dst_ex;
-    reg cu_alu_src_ex;
-    reg cu_branch_ex;
-    reg cu_mem_write_ex;
-    reg cu_mem_to_reg_ex;
-    reg [2:0] cu_alu_control_ex;
-    reg [31:0] reg_read1_ex;
-    reg [31:0] reg_read2_ex;
-    reg [4:0] rs_ex;
-    reg [4:0] rt_ex;
-    reg [4:0] rd_ex;
-    reg [31:0] signimm_ex;
-    reg [10:0] pc_plus4_ex;
-    wire [31:0] src_a_ex;
-    wire [31:0] src_b_ex;
-    wire [31:0] ram_write_data_ex;
-    wire [4:0] write_reg_ex;
-    wire alu_zero_ex;
-    wire [31:0] alu_result_ex;
-    wire [10:0] pc_branch_adder_ex;
-
-    /*  MEM Signal  */
-    reg cu_reg_write_mem;
-    reg cu_mem_to_reg_mem;
-    reg cu_mem_write_mem;
-    reg cu_branch_mem;
-    reg alu_zero_mem;
-    reg [31:0] alu_result_mem;
-    reg [31:0] ram_write_data_mem;
-    reg [4:0] write_reg_mem;
-    reg [10:0] pc_branch_mem;
-    wire pc_src_mem;
-    wire [31:0] ram_read_mem;
-
-    /*  WB Signal  */
-    reg cu_reg_write_wb;
-    reg cu_mem_to_reg_wb;
-    reg [31:0] alu_result_wb;
-    reg [31:0] ram_read_wb;
-    reg [4:0] write_reg_wb;
-    wire [31:0] result_wb;
+    hu u_hu (  
+        .rs_ex              (   rs_ex               ),
+        .rt_ex              (   rt_ex               ),
+        .forward_a          (   hu_forward_a        ),
+        .forward_b          (   hu_forward_b        ),
+        .write_reg_mem      (   write_reg_mem       ),
+        .cu_reg_write_mem   (   cu_reg_write_mem    ),
+        .write_reg_wb       (   write_reg_wb        ),
+        .cu_reg_write_wb    (   cu_reg_write_wb     )
+    );
 
     /*  pc branch mux  */
     assign pc = pc_src_mem ? pc_branch_mem : pc_plus4_if;
@@ -296,14 +311,30 @@ module top(
     /*  reg address destination mux  */
     assign write_reg_ex = cu_reg_dst_ex ? rd_ex : rt_ex;
 
-    /*  hazard unit / data fowarding  */
-    
-    // TODO
+    /*  hazard unit / data fowarding mux  */
+    always@(*)
+    begin
+        case(hu_forward_a)
+            2'b00: begin hu_forward_a_muxout = reg_read1_ex; end
+            2'b01: begin hu_forward_a_muxout = result_wb; end
+            2'b10: begin hu_forward_a_muxout = alu_result_mem; end
+            default: begin hu_forward_a_muxout = 32'h0; end
+        endcase
+
+        case(hu_forward_b)
+            2'b00: begin hu_forward_b_muxout = reg_read2_ex; end
+            2'b01: begin hu_forward_b_muxout = result_wb; end
+            2'b10: begin hu_forward_b_muxout = alu_result_mem; end
+            default: begin hu_forward_b_muxout = 32'h0; end
+        endcase
+    end
     
     
     /*  alu src mux  */
-    assign src_a_ex = reg_read1_ex;
-    assign src_b_ex = cu_alu_src_ex ? signimm_ex : reg_read2_ex;
+    //assign src_a_ex = reg_read1_ex;
+    assign src_a_ex = hu_forward_a_muxout;
+    //assign src_b_ex = cu_alu_src_ex ? signimm_ex : reg_read2_ex;
+    assign src_b_ex = cu_alu_src_ex ? signimm_ex : hu_forward_b_muxout;
 
     /*  alu  */
     assign alu_A = src_a_ex;

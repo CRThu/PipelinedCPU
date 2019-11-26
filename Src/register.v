@@ -15,8 +15,8 @@ module register(
 
     reg [31:0] register_block [31:0];
 
-    assign read1 = (addr1==5'b11111) ? 31'h0 : register_block[addr1];
-    assign read2 = (addr2==5'b11111) ? 31'h0 : register_block[addr2];
+    assign read1 = (addr1==5'b00000) ? 31'h0 : register_block[addr1];
+    assign read2 = (addr2==5'b00000) ? 31'h0 : register_block[addr2];
 
     integer i;
     always @(posedge clk or negedge reset_n)
@@ -30,7 +30,7 @@ module register(
         else
         begin
             /*  write  */
-            if(we3 && (addr3 != 5'b11111))
+            if(we3 && (addr3 != 5'b00000))
                 register_block[addr3] <= write3;
         end
     end
