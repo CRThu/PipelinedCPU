@@ -1,3 +1,4 @@
+/*  Control Unit  */
 module cu(
         input   wire            reset_n,
 

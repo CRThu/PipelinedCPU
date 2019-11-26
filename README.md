@@ -59,7 +59,9 @@ Execute nothing.
 
 ## Storage Size
 
-ROM : 2K * 8b = 16Kb
+ROM : 256 * 32b = 8Kb
+
+ROM (Reserved) : 256 * 32b = 8Kb
 
 REG : 31 * 32b = 992b
 

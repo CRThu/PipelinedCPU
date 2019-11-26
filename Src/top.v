@@ -18,7 +18,7 @@ module top(
     wire    [31:0]  rom_dout        ;
     wire    [10:0]  rom_addr        ;
 
-    // CU
+    // Control Unit
     wire    [5:0]   cu_op           ;
     wire    [5:0]   cu_funct        ;
     wire            cu_reg_write    ;
@@ -29,14 +29,7 @@ module top(
     wire            cu_mem_to_reg   ;
     wire    [2:0]   cu_alu_control  ;
 
-    // ALU
-    wire    [31:0]  alu_A           ;
-    wire    [31:0]  alu_B           ;
-    wire    [2:0]   alu_F           ;
-    wire    [31:0]  alu_result      ;
-    wire            alu_zero        ;
-
-    // register
+    // Register Block
     wire    [4:0]   reg_addr1       ;
     wire    [31:0]  reg_read1       ;
 
@@ -46,12 +39,23 @@ module top(
     wire            reg_we3         ;
     wire    [4:0]   reg_addr3       ;
     wire    [31:0]  reg_write3      ;
+    
+    // ALU
+    wire    [31:0]  alu_A           ;
+    wire    [31:0]  alu_B           ;
+    wire    [2:0]   alu_F           ;
+    wire    [31:0]  alu_result      ;
+    wire            alu_zero        ;
 
     // RAM
     wire            ram_we          ;
     wire    [31:0]  ram_addr        ;
     wire    [31:0]  ram_read        ;
     wire    [31:0]  ram_write       ;
+    
+    // Hazard Unit
+    wire    [1:0]   hu_forward_a    ;
+    wire    [1:0]   hu_forward_b    ;
 
     // terminal
     wire            terminal_we     ;
@@ -137,8 +141,9 @@ module top(
     wire [2:0] cu_alu_control_id;
     wire [31:0] reg_read1_id;
     wire [31:0] reg_read2_id;
-    wire [4:0] write_addra_id;
-    wire [4:0] write_addrb_id;
+    wire [4:0] rs_id;   // first source register
+    wire [4:0] rt_id;   // second source register
+    wire [4:0] rd_id;   // destination register
     wire [31:0] signimm_id;
 
     /*  EX Signal  */
@@ -151,14 +156,15 @@ module top(
     reg [2:0] cu_alu_control_ex;
     reg [31:0] reg_read1_ex;
     reg [31:0] reg_read2_ex;
-    reg [4:0] write_addra_ex;
-    reg [4:0] write_addrb_ex;
+    reg [4:0] rs_ex;
+    reg [4:0] rt_ex;
+    reg [4:0] rd_ex;
     reg [31:0] signimm_ex;
     reg [10:0] pc_plus4_ex;
     wire [31:0] src_a_ex;
     wire [31:0] src_b_ex;
     wire [31:0] ram_write_data_ex;
-    wire [4:0] write_addr_ex;
+    wire [4:0] write_reg_ex;
     wire alu_zero_ex;
     wire [31:0] alu_result_ex;
     wire [10:0] pc_branch_adder_ex;
@@ -171,7 +177,7 @@ module top(
     reg alu_zero_mem;
     reg [31:0] alu_result_mem;
     reg [31:0] ram_write_data_mem;
-    reg [4:0] write_addr_mem;
+    reg [4:0] write_reg_mem;
     reg [10:0] pc_branch_mem;
     wire pc_src_mem;
     wire [31:0] ram_read_mem;
@@ -181,7 +187,7 @@ module top(
     reg cu_mem_to_reg_wb;
     reg [31:0] alu_result_wb;
     reg [31:0] ram_read_wb;
-    reg [4:0] write_addr_wb;
+    reg [4:0] write_reg_wb;
     wire [31:0] result_wb;
 
     /*  pc branch mux  */
@@ -200,7 +206,7 @@ module top(
     assign pc_plus4_if = pc_if + 11'h4;
 
     /*  rom  */
-    // there is a ff in sprom
+    // signal datapath changed : input before PC_Register
     assign rom_addr = pc;
     //assign rom_addr = pc_if;
     assign instr_if = rom_dout;
@@ -234,15 +240,16 @@ module top(
     /*  reg  */
     assign reg_addr1    = instr_id[25:21];
     assign reg_addr2    = instr_id[20:16];
-    assign reg_addr3    = write_addr_wb;
+    assign reg_addr3    = write_reg_wb;
     assign reg_we3      = cu_reg_write_wb;
     assign reg_write3   = result_wb;
     assign reg_read1_id = reg_read1;
     assign reg_read2_id = reg_read2;
 
     /*  write address mux signal  */
-    assign write_addra_id = instr_id[20:16];
-    assign write_addrb_id = instr_id[15:11];
+    assign rs_id = instr_id[25:21];
+    assign rt_id = instr_id[20:16];
+    assign rd_id = instr_id[15:11];
 
     /*  sign extend  */
     assign signimm_id = {{16{instr_id[15]}},instr_id[15:0]};
@@ -261,8 +268,9 @@ module top(
             cu_reg_dst_ex <= 1'b0;
             reg_read1_ex <= 32'b0;
             reg_read2_ex <= 32'b0;
-            write_addra_ex <= 5'b0;
-            write_addrb_ex <= 5'b0;
+            rs_ex <= 5'b0;
+            rt_ex <= 5'b0;
+            rd_ex <= 5'b0;
             signimm_ex <= 32'b0;
             pc_plus4_ex <= 11'b0;
         end
@@ -277,16 +285,22 @@ module top(
             cu_reg_dst_ex <= cu_reg_dst_id;
             reg_read1_ex <= reg_read1_id;
             reg_read2_ex <= reg_read2_id;
-            write_addra_ex <= write_addra_id;
-            write_addrb_ex <= write_addrb_id;
+            rs_ex <= rs_id;
+            rt_ex <= rt_id;
+            rd_ex <= rd_id;
             signimm_ex <= signimm_id;
             pc_plus4_ex <= pc_plus4_id;
         end
     end
 
     /*  reg address destination mux  */
-    assign write_addr_ex = cu_reg_dst_ex ? write_addrb_ex : write_addra_ex;
+    assign write_reg_ex = cu_reg_dst_ex ? rd_ex : rt_ex;
 
+    /*  hazard unit / data fowarding  */
+    
+    // TODO
+    
+    
     /*  alu src mux  */
     assign src_a_ex = reg_read1_ex;
     assign src_b_ex = cu_alu_src_ex ? signimm_ex : reg_read2_ex;
@@ -316,7 +330,7 @@ module top(
             alu_zero_mem <= 1'b0;
             alu_result_mem <= 32'h0;
             ram_write_data_mem <= 32'h0;
-            write_addr_mem <= 5'h0;
+            write_reg_mem <= 5'h0;
             pc_branch_mem <= 11'h0;
         end
         else
@@ -328,7 +342,7 @@ module top(
             alu_zero_mem <= alu_zero_ex;
             alu_result_mem <= alu_result_ex;
             ram_write_data_mem <= ram_write_data_ex;
-            write_addr_mem <= write_addr_ex;
+            write_reg_mem <= write_reg_ex;
             pc_branch_mem <= pc_branch_adder_ex;
         end
     end
@@ -337,7 +351,7 @@ module top(
     assign pc_src_mem = cu_branch_mem & alu_zero_mem;
 
     /*  ram  */
-    // there is a ff in spram
+    // signal datapath changed : input before EX/MEM Register
     assign ram_we = cu_mem_write_ex;
     assign ram_addr = alu_result_ex;
     assign ram_write = ram_write_data_ex;
@@ -358,7 +372,7 @@ module top(
             cu_mem_to_reg_wb <= 1'b0;
             alu_result_wb <= 32'b0;
             ram_read_wb <= 32'h0;
-            write_addr_wb <= 5'h0;
+            write_reg_wb <= 5'h0;
         end
         else
         begin
@@ -366,7 +380,7 @@ module top(
             cu_mem_to_reg_wb <= cu_mem_to_reg_mem;
             alu_result_wb <= alu_result_mem;
             ram_read_wb <= ram_read_mem;
-            write_addr_wb <= write_addr_mem;
+            write_reg_wb <= write_reg_mem;
         end
     end
 

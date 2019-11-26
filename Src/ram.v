@@ -11,7 +11,7 @@ module ram(
         input   wire    [31:0]  data_write
     );
 
-    // signal datapath changed : input before EX/MEM
+    // signal datapath changed : input before EX/MEM Register
     // use 256 words ram
     
     `ifndef __IP_SPRAM__
