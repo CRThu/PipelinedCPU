@@ -1,16 +1,22 @@
 /*  Hazard Unit  */
 module hu(
+    output wire         stall_if,
+    output wire         stall_id,
+    input wire  [4:0]   rs_id,
+    input wire  [4:0]   rt_id,
+    output wire         flush_ex,
     input wire  [4:0]   rs_ex,
     input wire  [4:0]   rt_ex,
-    output reg [1:0]   forward_a,
-    output reg [1:0]   forward_b,
+    output reg  [1:0]   forward_a,
+    output reg  [1:0]   forward_b,
+    input wire          cu_mem_to_reg_ex,
     input wire  [4:0]   write_reg_mem,
     input wire          cu_reg_write_mem,
     input wire  [4:0]   write_reg_wb,
     input wire          cu_reg_write_wb
 );
 
-    /*  Data Forwarding  */
+    /*  Data Forwarding / when register waiting for writed in MEM and WB before being read  */
     /*  Port A  */
     always @(*)
     begin
@@ -50,5 +56,12 @@ module hu(
             forward_b = 2'b00;
         end
     end
+
+    /*  Stalling / when register waiting for loading word from RAM before being read  */
+    wire lw_stall;
+    assign lw_stall = ((rs_id == rt_ex) | (rt_id == rt_ex)) & cu_mem_to_reg_ex;
+    assign stall_id = lw_stall;
+    assign stall_if = lw_stall;
+    assign flush_ex = lw_stall;
 
 endmodule // hu

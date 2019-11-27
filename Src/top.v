@@ -57,6 +57,9 @@ module top(
     /*  Hazard Unit  */
     wire    [1:0]   hu_forward_a    ;
     wire    [1:0]   hu_forward_b    ;
+    wire            hu_stall_if     ;
+    wire            hu_stall_id     ;
+    wire            hu_flush_ex     ;
 
     /*  terminal  */
     wire            terminal_we     ;
@@ -134,9 +137,14 @@ module top(
     reg [4:0] write_reg_wb;
     wire [31:0] result_wb;
 
+    /*  from hu / Register enable signal and clr signal  */
+    wire pc_reg_stall = hu_stall_if;
+    wire if_id_reg_stall = hu_stall_id;
+    wire id_ex_reg_clr = hu_flush_ex;
+
     /*  Instance  */
     rom  u_rom (
-        .clk            (   clk             ),
+        .clk            (   clk      ),
         .aclr           (   ~reset_n        ),
         .dout           (   rom_dout        ),
         .addr           (   rom_addr        )
@@ -194,17 +202,24 @@ module top(
         .terminal_bus   (   terminal_bus    )
     );
 
-    hu u_hu (  
+    hu u_hu (
+        .stall_if           (   hu_stall_if         ),
+        .stall_id           (   hu_stall_id         ),
+        .rs_id              (   rs_id               ),
+        .rt_id              (   rt_id               ),
+        .flush_ex           (   hu_flush_ex         ),
         .rs_ex              (   rs_ex               ),
         .rt_ex              (   rt_ex               ),
         .forward_a          (   hu_forward_a        ),
         .forward_b          (   hu_forward_b        ),
+        .cu_mem_to_reg_ex   (   cu_mem_to_reg_ex    ),
         .write_reg_mem      (   write_reg_mem       ),
         .cu_reg_write_mem   (   cu_reg_write_mem    ),
         .write_reg_wb       (   write_reg_wb        ),
         .cu_reg_write_wb    (   cu_reg_write_wb     )
     );
 
+    
     /*  pc branch mux  */
     assign pc = pc_src_mem ? pc_branch_mem : pc_plus4_if;
 
@@ -212,9 +227,14 @@ module top(
     always @(posedge clk or negedge reset_n)
 	begin
         if(!reset_n)
-			pc_if <= 11'h0;
+            pc_if <= 11'h0;
         else
-			pc_if <= pc;
+        begin
+            if(!pc_reg_stall)
+            begin
+                pc_if <= pc;
+            end
+        end
     end
 
     /*  pc plus4 adder  */
@@ -231,13 +251,16 @@ module top(
 	begin
         if(!reset_n)
         begin
-			instr_id <= 32'h0;
+            instr_id <= 32'h0;
             pc_plus4_id <= 11'h0;
         end
         else
         begin
-			instr_id <= instr_if;
-            pc_plus4_id <= pc_plus4_if;
+            if(!if_id_reg_stall)
+            begin
+                instr_id <= instr_if;
+                pc_plus4_id <= pc_plus4_if;
+            end
         end
     end
 
@@ -291,20 +314,40 @@ module top(
         end
         else
         begin
-            cu_reg_write_ex <= cu_reg_write_id;
-            cu_mem_to_reg_ex <= cu_mem_to_reg_id;
-            cu_mem_write_ex <= cu_mem_write_id;
-            cu_branch_ex <= cu_branch_id;
-            cu_alu_control_ex <= cu_alu_control_id;
-            cu_alu_src_ex <= cu_alu_src_id;
-            cu_reg_dst_ex <= cu_reg_dst_id;
-            reg_read1_ex <= reg_read1_id;
-            reg_read2_ex <= reg_read2_id;
-            rs_ex <= rs_id;
-            rt_ex <= rt_id;
-            rd_ex <= rd_id;
-            signimm_ex <= signimm_id;
-            pc_plus4_ex <= pc_plus4_id;
+            if(id_ex_reg_clr)
+            begin
+                cu_reg_write_ex <= 1'b0;
+                cu_mem_to_reg_ex <= 1'b0;
+                cu_mem_write_ex <= 1'b0;
+                cu_branch_ex <= 1'b0;
+                cu_alu_control_ex <= 3'b0;
+                cu_alu_src_ex <= 1'b0;
+                cu_reg_dst_ex <= 1'b0;
+                reg_read1_ex <= 32'b0;
+                reg_read2_ex <= 32'b0;
+                rs_ex <= 5'b0;
+                rt_ex <= 5'b0;
+                rd_ex <= 5'b0;
+                signimm_ex <= 32'b0;
+                pc_plus4_ex <= 11'b0;
+            end
+            else
+            begin
+                cu_reg_write_ex <= cu_reg_write_id;
+                cu_mem_to_reg_ex <= cu_mem_to_reg_id;
+                cu_mem_write_ex <= cu_mem_write_id;
+                cu_branch_ex <= cu_branch_id;
+                cu_alu_control_ex <= cu_alu_control_id;
+                cu_alu_src_ex <= cu_alu_src_id;
+                cu_reg_dst_ex <= cu_reg_dst_id;
+                reg_read1_ex <= reg_read1_id;
+                reg_read2_ex <= reg_read2_id;
+                rs_ex <= rs_id;
+                rt_ex <= rt_id;
+                rd_ex <= rd_id;
+                signimm_ex <= signimm_id;
+                pc_plus4_ex <= pc_plus4_id;
+            end
         end
     end
 
@@ -328,7 +371,6 @@ module top(
             default: begin hu_forward_b_muxout = 32'h0; end
         endcase
     end
-    
     
     /*  alu src mux  */
     //assign src_a_ex = reg_read1_ex;
