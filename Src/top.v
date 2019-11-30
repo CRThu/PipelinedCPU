@@ -46,7 +46,7 @@ module top(
     wire    [31:0]  alu_B           ;
     wire    [2:0]   alu_F           ;
     wire    [31:0]  alu_result      ;
-    wire            alu_zero        ;
+    //wire            alu_zero        ;
 
     /*  RAM  */
     wire            ram_we          ;
@@ -94,6 +94,8 @@ module top(
     wire [31:0] signimm_id;
     wire equal_id;      // early branch
     wire pc_src_id;     // early branch
+    wire [10:0] pc_branch_adder_id;
+    wire [10:0] pc_branch_id;
     
     /*  EX Signal  */
     reg cu_reg_write_ex;
@@ -109,7 +111,7 @@ module top(
     reg [4:0] rt_ex;
     reg [4:0] rd_ex;
     reg [31:0] signimm_ex;
-    reg [10:0] pc_plus4_ex;
+    //reg [10:0] pc_plus4_ex;
     reg [31:0] hu_forward_a_muxout;
     reg [31:0] hu_forward_b_muxout;
     wire [31:0] src_a_ex;
@@ -118,7 +120,7 @@ module top(
     wire [4:0] write_reg_ex;
     //wire alu_zero_ex;
     wire [31:0] alu_result_ex;
-    wire [10:0] pc_branch_adder_ex;
+    //wire [10:0] pc_branch_adder_ex;
 
     /*  MEM Signal  */
     reg cu_reg_write_mem;
@@ -129,7 +131,7 @@ module top(
     reg [31:0] alu_result_mem;
     reg [31:0] ram_write_data_mem;
     reg [4:0] write_reg_mem;
-    reg [10:0] pc_branch_mem;
+    //reg [10:0] pc_branch_mem;
     //wire pc_src_mem;
     wire [31:0] ram_read_mem;
 
@@ -233,7 +235,8 @@ module top(
 
     /*  pc branch mux  */
     //assign pc = pc_src_mem ? pc_branch_mem : pc_plus4_if;
-    assign pc = pc_src_id ? pc_branch_mem : pc_plus4_if;
+    //assign pc = pc_src_id ? pc_branch_mem : pc_plus4_if;
+    assign pc = pc_src_id ? pc_branch_id : pc_plus4_if;
 
     /*  PC Register  */
     always @(posedge clk or negedge reset_n)
@@ -332,7 +335,7 @@ module top(
             rt_ex <= 5'b0;
             rd_ex <= 5'b0;
             signimm_ex <= 32'b0;
-            pc_plus4_ex <= 11'b0;
+            //pc_plus4_ex <= 11'b0;
         end
         else
         begin
@@ -351,7 +354,7 @@ module top(
                 rt_ex <= 5'b0;
                 rd_ex <= 5'b0;
                 signimm_ex <= 32'b0;
-                pc_plus4_ex <= 11'b0;
+                //pc_plus4_ex <= 11'b0;
             end
             else
             begin
@@ -368,7 +371,7 @@ module top(
                 rt_ex <= rt_id;
                 rd_ex <= rd_id;
                 signimm_ex <= signimm_id;
-                pc_plus4_ex <= pc_plus4_id;
+                //pc_plus4_ex <= pc_plus4_id;
             end
         end
     end
@@ -404,14 +407,16 @@ module top(
     assign alu_A = src_a_ex;
     assign alu_B = src_b_ex;
     assign alu_F = cu_alu_control_ex;
-    assign alu_zero_ex = alu_zero;
+    //assign alu_zero_ex = alu_zero;
     assign alu_result_ex = alu_result;
 
     /*  ram write data signal  */
     assign ram_write_data_ex = reg_read2_ex;
 
     /*  branch adder  */
-    assign pc_branch_adder_ex = pc_plus4_ex + (signimm_ex << 2'd2);
+    //assign pc_branch_adder_ex = pc_plus4_ex + (signimm_ex << 2'd2);
+    assign pc_branch_adder_id = pc_plus4_id + (signimm_id << 2'd2);
+    assign pc_branch_id = pc_branch_adder_id;
 
     /*  EX/MEM Register  */
     always @(posedge clk or negedge reset_n)
@@ -426,7 +431,7 @@ module top(
             alu_result_mem <= 32'h0;
             ram_write_data_mem <= 32'h0;
             write_reg_mem <= 5'h0;
-            pc_branch_mem <= 11'h0;
+            //pc_branch_mem <= 11'h0;
         end
         else
         begin
@@ -438,7 +443,7 @@ module top(
             alu_result_mem <= alu_result_ex;
             ram_write_data_mem <= ram_write_data_ex;
             write_reg_mem <= write_reg_ex;
-            pc_branch_mem <= pc_branch_adder_ex;
+            //pc_branch_mem <= pc_branch_adder_ex;
         end
     end
 
