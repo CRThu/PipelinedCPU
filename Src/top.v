@@ -18,6 +18,7 @@ module top(
     /*  ROM  */
     wire    [31:0]  rom_dout        ;
     wire    [10:0]  rom_addr        ;
+    wire            rom_stall       ;
 
     /*  Control Unit  */
     wire    [5:0]   cu_op           ;
@@ -156,7 +157,8 @@ module top(
         .clk            (   clk      ),
         .aclr           (   ~reset_n        ),
         .dout           (   rom_dout        ),
-        .addr           (   rom_addr        )
+        .addr           (   rom_addr        ),
+        .stall_pc       (   rom_stall       )
     );
     
     cu  u_cu (
@@ -260,6 +262,9 @@ module top(
     assign rom_addr = pc;
     //assign rom_addr = pc_if;
     assign instr_if = rom_dout;
+    
+    // new for bug in pipeline 20191204
+    assign rom_stall = pc_reg_stall;
 
     /*  IF/ID Register  */
     always @(posedge clk or negedge reset_n)
@@ -411,7 +416,8 @@ module top(
     assign alu_result_ex = alu_result;
 
     /*  ram write data signal  */
-    assign ram_write_data_ex = reg_read2_ex;
+    // new for bug in pipeline 20191204
+    assign ram_write_data_ex = hu_forward_b_muxout;
 
     /*  branch adder  */
     //assign pc_branch_adder_ex = pc_plus4_ex + (signimm_ex << 2'd2);

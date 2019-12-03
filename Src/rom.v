@@ -7,12 +7,13 @@ module rom(
         input   wire            clk,
         input   wire            aclr,
         output  wire    [31:0]  dout,
-        input   wire    [10:0]  addr
+        input   wire    [10:0]  addr,
+        input   wire            stall_pc
     );
 
     // signal datapath changed : input before PC_Register
     // use 256 words rom
-    
+    // TODO: TO BE UPDATED stall_pc!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     `ifndef __IP_SPROM__
         reg [31:0] rom_block [255:0];
         
@@ -39,6 +40,7 @@ module rom(
         ip_sprom u_ip_sprom (
             .aclr       ( aclr      ),
             .address    ( addr[9:2] ),
+            .addressstall_a ( stall_pc ),
             .clock      ( clk       ),
             .q          ( dout      )
         );
