@@ -13,7 +13,6 @@ module rom(
 
     // signal datapath changed : input before PC_Register
     // use 256 words rom
-    // TODO: TO BE UPDATED stall_pc!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     `ifndef __IP_SPROM__
         reg [31:0] rom_block [255:0];
         
@@ -24,7 +23,12 @@ module rom(
             if(aclr)
                 q_addr <= 11'h0;
             else
-                q_addr <= addr;
+            begin
+                if(!stall_pc)
+                begin
+                    q_addr <= addr;
+                end
+            end
         end
         
         // ROM Block
@@ -34,7 +38,6 @@ module rom(
             q_dout= rom_block[q_addr[9:2]];
         end
         assign dout = q_dout;
-        
     `else
         // use ip_sprom
         ip_sprom u_ip_sprom (
