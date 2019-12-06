@@ -16,6 +16,7 @@ module hu(
     input wire          cu_mem_to_reg_ex,
     input wire          cu_reg_write_ex,
     input wire  [4:0]   write_reg_mem,
+    input wire          cu_mem_to_reg_mem,
     input wire          cu_reg_write_mem,
     input wire  [4:0]   write_reg_wb,
     input wire          cu_reg_write_wb
@@ -75,8 +76,8 @@ module hu(
     wire branch_stall_mem;
     wire branch_stall = branch_stall_ex | branch_stall_mem;
     assign branch_stall_ex = cu_branch_id & cu_reg_write_ex & (write_reg_ex == rs_id | write_reg_ex == rt_id);
-    // ***:cu_reg_write_mem may be wrong???
-    assign branch_stall_mem = cu_branch_id & cu_reg_write_mem & (write_reg_mem == rs_id | write_reg_mem == rt_id);
+    // ***:cu_mem_to_reg_mem need to be tested!
+    assign branch_stall_mem = cu_branch_id & cu_mem_to_reg_mem & (write_reg_mem == rs_id | write_reg_mem == rt_id);
     
     assign stall_if = lw_stall | branch_stall;
     assign stall_id = lw_stall | branch_stall;

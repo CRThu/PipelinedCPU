@@ -56,7 +56,7 @@ module top_tb;
 
         `ifndef __QUARTUS__
             `ifdef __ROM_TEST_INSTR__
-                #600 $finish;
+                #350 $finish;
             `else
             `ifdef __ROM_WAWEI_TERMINAL__
                 #4500 $finish;
@@ -64,7 +64,7 @@ module top_tb;
             `endif
         `else
             `ifdef __ROM_TEST_INSTR__
-                #600 $stop;
+                #350 $stop;
             `else
             `ifdef __ROM_WAWEI_TERMINAL__
                 #4500 $stop;

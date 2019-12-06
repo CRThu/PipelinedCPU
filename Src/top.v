@@ -230,6 +230,7 @@ module top(
         .cu_mem_to_reg_ex   (   cu_mem_to_reg_ex    ),
         .cu_reg_write_ex    (   cu_reg_write_ex     ),
         .write_reg_mem      (   write_reg_mem       ),
+        .cu_mem_to_reg_mem  (   cu_mem_to_reg_mem   ),
         .cu_reg_write_mem   (   cu_reg_write_mem    ),
         .write_reg_wb       (   write_reg_wb        ),
         .cu_reg_write_wb    (   cu_reg_write_wb     )
