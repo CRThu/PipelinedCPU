@@ -70,3 +70,7 @@ RAM : 256 * 32b = 8Kb
 Terminal(Virtual) : 256 * 32b = 8Kb
 
 RAM(Reserved) : 4G * 32b = 128Gb
+
+## Interpreter
+
+Interpreter has been moved to the repo - [CRThu/Carrot Inside CPU Interpreter](https://github.com/CRThu/Carrot-Inside-CPU-Interpreter).
