@@ -4,7 +4,7 @@ carrot's simple 5 stages pipelined cpu -- CRT8008
 
 ## Structure
 
-![crt8008.svg](https://raw.githubusercontent.com/CRThu/PipelinedCPU/master/img/crt8008.svg)
+![crt8008.png](https://raw.githubusercontent.com/CRThu/PipelinedCPU/master/img/crt8008.png)
 
 ## Simulation Wave of Demo
 
