@@ -21,7 +21,7 @@ module terminal(
         else
         begin
             /*  write  */
-            if(we && (addr[31:8] == 24'h1))
+            if(we && (addr[31:8] == 24'h0))
             begin
                 terminal_bus <= data_write[7:0];
                 terminal_block <= (terminal_block << 8) + data_write[7:0];

@@ -4,6 +4,7 @@
     `include "./Src/cu.v"
     `include "./Src/ram.v"
     `include "./Src/register.v"
+    `include "./Src/ioctl.v"
     `include "./Src/rom.v"
     `include "./Src/terminal.v"
     `include "./Src/hu.v"
@@ -63,6 +64,15 @@ module top(
     wire            hu_stall_if     ;
     wire            hu_stall_id     ;
     wire            hu_flush_ex     ;
+
+    /*  I/O Control  */
+    wire            ioctl_we        ;
+    wire    [31:0]  ioctl_addr      ;
+    wire            ioctl_ram_we    ;
+    wire    [31:0]  ioctl_ram_addr  ;
+    wire            ioctl_io_we     ;
+    wire    [31:0]  ioctl_io_addr   ;
+    wire            ioctl_read_mux  ;
 
     /*  terminal  */
     wire            terminal_we     ;
@@ -202,6 +212,16 @@ module top(
         .addr           (   ram_addr        ),
         .data_read      (   ram_read        ),
         .data_write     (   ram_write       )
+    );
+    
+    ioctl u_ioctl (
+        .we             (   ioctl_we        ),
+        .addr           (   ioctl_addr      ),
+        .ram_we         (   ioctl_ram_we    ),
+        .ram_addr       (   ioctl_ram_addr  ),
+        .io_we          (   ioctl_io_we     ),
+        .io_addr        (   ioctl_io_addr   ),
+        .read_mux       (   ioctl_read_mux  )
     );
 
     terminal u_terminal (
@@ -457,20 +477,33 @@ module top(
     /*  pc branch mux control AND   */
     //assign pc_src_mem = cu_branch_mem & alu_zero_mem;
 
-    /*  ram  */
+    /*  ioctl  */
     // add ram address mux
-    // TODO
-    
-    // signal datapath changed : input before EX/MEM Register
-    assign ram_we = cu_mem_write_ex;
-    assign ram_addr = alu_result_ex;
+    assign ioctl_we = cu_mem_write_ex;
+    assign ioctl_addr = alu_result_ex;
+    /*  ram  */
+    assign ram_we = ioctl_ram_we;
+    assign ram_addr = ioctl_ram_addr;
     assign ram_write = ram_write_data_ex;
-    assign ram_read_mem = ram_read;
+    /*  terminal  */
+    assign terminal_we = ioctl_io_we;
+    assign terminal_addr = ioctl_io_addr;
+    assign terminal_write = ram_write_data_ex;
+    /*  read_mux  */
+    assign ram_read_mem = ioctl_read_mux ? terminal_read : ram_read;
+    
+    
+    /*  ram  */
+    // signal datapath changed : input before EX/MEM Register
+    //assign ram_we = cu_mem_write_ex;
+    //assign ram_addr = alu_result_ex;
+    //assign ram_write = ram_write_data_ex;
+    //assign ram_read_mem = ram_read;
     
     /*  terminal  */
-    assign terminal_we = cu_mem_write_ex;
-    assign terminal_addr = alu_result_ex;
-    assign terminal_write = ram_write_data_ex;
+    //assign terminal_we = cu_mem_write_ex;
+    //assign terminal_addr = alu_result_ex;
+    //assign terminal_write = ram_write_data_ex;
     
 
     /*  MEM/WB Register  */
