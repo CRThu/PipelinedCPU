@@ -126,11 +126,11 @@ module top(
     /*  MEM Signal  */
     reg cu_reg_write_mem;
     reg cu_mem_to_reg_mem;
-    reg cu_mem_write_mem;
+    //reg cu_mem_write_mem;
     //reg cu_branch_mem;
     //reg alu_zero_mem;
     reg [31:0] alu_result_mem;
-    reg [31:0] ram_write_data_mem;
+    //reg [31:0] ram_write_data_mem;
     reg [4:0] write_reg_mem;
     //reg [10:0] pc_branch_mem;
     //wire pc_src_mem;
@@ -432,11 +432,11 @@ module top(
         begin
             cu_reg_write_mem <= 1'b0;
             cu_mem_to_reg_mem <= 1'b0;
-            cu_mem_write_mem <= 1'b0;
+            //cu_mem_write_mem <= 1'b0;
             //cu_branch_mem <= 1'b0;
             //alu_zero_mem <= 1'b0;
             alu_result_mem <= 32'h0;
-            ram_write_data_mem <= 32'h0;
+            //ram_write_data_mem <= 32'h0;
             write_reg_mem <= 5'h0;
             //pc_branch_mem <= 11'h0;
         end
@@ -444,11 +444,11 @@ module top(
         begin
             cu_reg_write_mem <= cu_reg_write_ex;
             cu_mem_to_reg_mem <= cu_mem_to_reg_ex;
-            cu_mem_write_mem <= cu_mem_write_ex;
+            //cu_mem_write_mem <= cu_mem_write_ex;
             //cu_branch_mem <= cu_branch_ex;
             //alu_zero_mem <= alu_zero_ex;
             alu_result_mem <= alu_result_ex;
-            ram_write_data_mem <= ram_write_data_ex;
+            //ram_write_data_mem <= ram_write_data_ex;
             write_reg_mem <= write_reg_ex;
             //pc_branch_mem <= pc_branch_adder_ex;
         end
@@ -458,6 +458,9 @@ module top(
     //assign pc_src_mem = cu_branch_mem & alu_zero_mem;
 
     /*  ram  */
+    // add ram address mux
+    // TODO
+    
     // signal datapath changed : input before EX/MEM Register
     assign ram_we = cu_mem_write_ex;
     assign ram_addr = alu_result_ex;
@@ -465,9 +468,9 @@ module top(
     assign ram_read_mem = ram_read;
     
     /*  terminal  */
-    assign terminal_we = cu_mem_write_mem;
-    assign terminal_addr = alu_result_mem;
-    assign terminal_write = ram_write_data_mem;
+    assign terminal_we = cu_mem_write_ex;
+    assign terminal_addr = alu_result_ex;
+    assign terminal_write = ram_write_data_ex;
     
 
     /*  MEM/WB Register  */
