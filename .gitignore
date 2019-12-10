@@ -9,6 +9,8 @@
 /quartus/*/db/
 /quartus/*/greybox_tmp/
 /quartus/*/incremental_db/
-/quartus/*/output_files/
+/quartus/*/output_files/*
 /quartus/*/simulation/modelsim/*
 !**.mif
+!**.sof
+!**.jic

@@ -3,20 +3,22 @@ module terminal(
         input   wire            reset_n,
         input   wire            we,
         input   wire    [31:0]  addr,
+        output  wire    [31:0]  data_read,
         input   wire    [31:0]  data_write,
-        output  reg     [7:0]   terminal_bus
+        output  reg     [7:0]   terminal_bus = 8'h0
 );
 
     // reg [7:0] terminal_bus;
-    reg [127:0] terminal_block;
+    reg [127:0] terminal_block = 128'h0;
+    
+    assign data_read = 32'hFFFFFFFF;
 
-    integer i;
     always @(posedge clk or negedge reset_n)
     begin
         if(!reset_n)
         begin
-            terminal_bus = 8'h0;
-            terminal_block = 128'h0;
+            terminal_bus <= 8'h0;
+            terminal_block <= 128'h0;
         end
         else
         begin
@@ -28,6 +30,5 @@ module terminal(
             end
         end
     end
-
 
 endmodule // terminal

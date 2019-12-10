@@ -228,7 +228,8 @@ module top(
         .clk            (   clk             ),
         .reset_n        (   reset_n         ),
         .we             (   terminal_we     ),
-        .addr           (   terminal_addr   ),
+        .addr           (   terminal_addr   ),  
+        .data_read      (   terminal_read   ),
         .data_write     (   terminal_write  ),
         .terminal_bus   (   terminal_bus    )
     );
