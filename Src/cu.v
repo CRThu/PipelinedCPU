@@ -20,13 +20,13 @@ module cu(
     begin
 		if(!reset_n)
 		begin
-            reg_write       = 0;
-            reg_dst         = 0;
-            alu_src         = 0;
-            branch          = 0;
-            mem_write       = 0;
-            mem_to_reg      = 0;
-            alu_op          = 2'h0;
+            reg_write       = 1'b0;
+            reg_dst         = 1'b0;
+            alu_src         = 1'b0;
+            branch          = 1'b0;
+            mem_write       = 1'b0;
+            mem_to_reg      = 1'b0;
+            alu_op          = 2'b00;
         end
         else
         begin
@@ -35,84 +35,96 @@ module cu(
                 /*  R-type instructions  */
                 6'b000000:
                 begin
-                    reg_write = 1;
-                    reg_dst = 1;
-                    alu_src = 0;
-                    branch = 0;
-                    mem_write = 0;
-                    mem_to_reg = 0;
-                    alu_op = 2'b10;
+                    reg_write   = 1'b1;
+                    reg_dst     = 1'b1;
+                    alu_src     = 1'b0;
+                    branch      = 1'b0;
+                    mem_write   = 1'b0;
+                    mem_to_reg  = 1'b0;
+                    alu_op      = 2'b10;
                 end
 
                 /*  Memory instructions - lw  */ 
                 6'b100011:
                 begin
-                    reg_write = 1;
-                    reg_dst = 0;
-                    alu_src = 1;
-                    branch = 0;
-                    mem_write = 0;
-                    mem_to_reg = 1;
-                    alu_op = 2'b00;
+                    reg_write   = 1'b1;
+                    reg_dst     = 1'b0;
+                    alu_src     = 1'b1;
+                    branch      = 1'b0;
+                    mem_write   = 1'b0;
+                    mem_to_reg  = 1'b1;
+                    alu_op      = 2'b00;
                 end
 
                 /*  Memory instructions - sw  */ 
                 6'b101011:
                 begin
-                    reg_write = 0;
-                    reg_dst = 0;    // X
-                    alu_src = 1;
-                    branch = 0;
-                    mem_write = 1;
-                    mem_to_reg = 0; // X
-                    alu_op = 2'b00;
+                    reg_write   = 1'b0;
+                    reg_dst     = 1'b0; // X
+                    alu_src     = 1'b1;
+                    branch      = 1'b0;
+                    mem_write   = 1'b1;
+                    mem_to_reg  = 1'b0; // X
+                    alu_op      = 2'b00;
                 end
 
                 /*  Branch instructions - beq  */ 
                 6'b000100:
                 begin
-                    reg_write = 0;
-                    reg_dst = 0;    // X
-                    alu_src = 0;
-                    branch = 1;
-                    mem_write = 0;
-                    mem_to_reg = 0; // X
-                    alu_op = 2'b01;
+                    reg_write   = 1'b0;
+                    reg_dst     = 1'b0; // X
+                    alu_src     = 1'b0;
+                    branch      = 1'b1;
+                    mem_write   = 1'b0;
+                    mem_to_reg  = 1'b0; // X
+                    alu_op      = 2'b01;
                 end
                 
                 /*  NEW : addi  */
                 6'b001000:
                 begin
-                    reg_write = 1;
-                    reg_dst = 0;
-                    alu_src = 1;
-                    branch = 0;
-                    mem_write = 0;
-                    mem_to_reg = 0;
-                    alu_op = 2'b00;
+                    reg_write   = 1'b1;
+                    reg_dst     = 1'b0;
+                    alu_src     = 1'b1;
+                    branch      = 1'b0;
+                    mem_write   = 1'b0;
+                    mem_to_reg  = 1'b0;
+                    alu_op      = 2'b00;
                 end
                 
                 /*  NEW : NOP  */
                 6'b111111:
                 begin
-                    reg_write = 0;
-                    reg_dst = 0;    // X
-                    alu_src = 0;    // X
-                    branch = 0;
-                    mem_write = 0;
-                    mem_to_reg = 0; // X
-                    alu_op = 2'b00; // X
+                    reg_write   = 1'b0;
+                    reg_dst     = 1'b0; // X
+                    alu_src     = 1'b0; // X
+                    branch      = 1'b0;
+                    mem_write   = 1'b0;
+                    mem_to_reg  = 1'b0; // X
+                    alu_op      = 2'b00;// X
+                end
+                
+                /*  NEW : SRL/SLL(Shift Right/Left Logic)  */
+                6'b000010,6'b000011:
+                begin
+                    reg_write   = 1'b1;
+                    reg_dst     = 1'b0;
+                    alu_src     = 1'b1;
+                    branch      = 1'b0;
+                    mem_write   = 1'b0;
+                    mem_to_reg  = 1'b0;
+                    alu_op      = 2'b11;
                 end
                 
                 default:
                 begin
-                    reg_write = 1'hx;
-                    reg_dst = 1'hx;
-                    alu_src = 1'hx;
-                    branch = 1'hx;
-                    mem_write = 1'hx;
-                    mem_to_reg = 1'hx;
-                    alu_op = 2'bxx;
+                    reg_write   = 1'hx;
+                    reg_dst     = 1'hx;
+                    alu_src     = 1'hx;
+                    branch      = 1'hx;
+                    mem_write   = 1'hx;
+                    mem_to_reg  = 1'hx;
+                    alu_op      = 2'bxx;
                 end	 
             endcase
         end
@@ -144,6 +156,12 @@ module cu(
                 endcase
             end
 
+            2'b11:
+            begin
+                alu_control = {2'b10,op[0]};    // SLL,SRL
+                
+            end
+            
             default: 
             begin
                 alu_control = 3'bxxx;

@@ -72,7 +72,7 @@ module top(
     wire    [31:0]  ioctl_ram_addr  ;
     wire            ioctl_io_we     ;
     wire    [31:0]  ioctl_io_addr   ;
-    wire            ioctl_read_mux  ;
+    wire    [1:0]   ioctl_read_mux  ;
 
     /*  terminal  */
     wire            terminal_we     ;
@@ -144,7 +144,7 @@ module top(
     reg [4:0] write_reg_mem;
     //reg [10:0] pc_branch_mem;
     //wire pc_src_mem;
-    wire [31:0] ram_read_mem;
+    reg [31:0] ram_read_mem;
 
     /*  WB Signal  */
     reg cu_reg_write_wb;
@@ -491,8 +491,14 @@ module top(
     assign terminal_addr = ioctl_io_addr;
     assign terminal_write = ram_write_data_ex;
     /*  read_mux  */
-    assign ram_read_mem = ioctl_read_mux ? terminal_read : ram_read;
-    
+    always@(*)
+    begin
+        case(ioctl_read_mux)
+            2'b00:      begin ram_read_mem = ram_read; end
+            2'b01:      begin ram_read_mem = terminal_read; end
+            default:    begin ram_read_mem = 32'bx; end
+        endcase
+    end
     
     /*  ram  */
     // signal datapath changed : input before EX/MEM Register
