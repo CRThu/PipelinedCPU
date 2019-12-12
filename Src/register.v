@@ -45,7 +45,7 @@ module register(
         end
         else
         begin
-            read2 = register_block[addr1];
+            read2 = register_block[addr2];
         end
     end
     
