@@ -21,31 +21,31 @@ module ioctl(
 
     always@(*)
     begin
-        io_we = 1'b0;
-        io_addr = 32'hx;
-        ram_we = 1'b0;
-        ram_addr = 32'hx;
-        read_mux = 2'bxx;
+        io_we           = 1'b0;
+        ram_we          = 1'b0;
+        io_addr         = 32'h0;   //x
+        ram_addr        = 32'h0;   //x
+        read_mux        = 2'b00;   //x
         if(addr >= `RAM_ADDR_BEGIN && addr <= `RAM_ADDR_END)
         begin
-            ram_we = we;
-            ram_addr = addr - `RAM_ADDR_BEGIN;
-            read_mux = 2'b00;
+            ram_we      = we;
+            ram_addr    = addr - `RAM_ADDR_BEGIN;
+            read_mux    = 2'b00;
         end
         else
         if(addr >= `IO_ADDR_BEGIN && addr <= `IO_ADDR_END)
         begin
-            io_we = we;
-            io_addr = addr - `IO_ADDR_BEGIN;
-            read_mux = 2'b01;
+            io_we       = we;
+            io_addr     = addr - `IO_ADDR_BEGIN;
+            read_mux    = 2'b01;
         end
         else
         begin
-            ram_we = 1'bx;
-            io_we = 1'bx;
-            ram_addr = 32'hx;
-            io_addr = 32'hx;
-            read_mux = 2'bxx;
+            ram_we      = 1'b0;
+            io_we       = 1'b0;
+            ram_addr    = 32'h0;   //x
+            io_addr     = 32'h0;   //x
+            read_mux    = 2'b00;   //x
         end
     end
     

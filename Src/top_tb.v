@@ -22,7 +22,7 @@ module top_tb;
     top u_top(clk,reset_n,terminal_bus);
 
     always
-        #10 clk=~clk;
+        #10 clk = ~clk;
 
     integer i;
     initial
