@@ -14,8 +14,8 @@
 
 module top_tb;
 
-    reg clk = 0;
-    reg reset_n = 1;
+    reg clk = 1'b0;
+    reg reset_n = 1'b1;
     wire [7:0] terminal_bus;
 
     /*  Instance  */
@@ -51,23 +51,23 @@ module top_tb;
              `endif
         `endif
 
-        #20 reset_n = 0;
-        #20 reset_n = 1;
+        #20 reset_n = 1'b0;
+        #20 reset_n = 1'b1;
 
         `ifndef __QUARTUS__
             `ifdef __ROM_TEST_INSTR__
-                #1000 $finish;
+                #500 $finish;
             `else
             `ifdef __ROM_WAWEI_TERMINAL__
-                #4500 $finish;
+                #2000 $finish;
             `endif
             `endif
         `else
             `ifdef __ROM_TEST_INSTR__
-                #1000 $stop;
+                #500 $stop;
             `else
             `ifdef __ROM_WAWEI_TERMINAL__
-                #4500 $stop;
+                #2000 $stop;
             `endif
             `endif
         `endif

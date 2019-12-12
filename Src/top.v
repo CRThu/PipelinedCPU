@@ -8,6 +8,7 @@
     `include "./Src/rom.v"
     `include "./Src/terminal.v"
     `include "./Src/hu.v"
+    `include "./Src/pll.v"
 `endif
 
 module top(
@@ -15,7 +16,12 @@ module top(
 	input   wire            reset_n,
     output  wire    [7:0]   terminal_bus
 );
-
+    /*  PLL  */
+    wire            pll_locked      ;
+    wire            cpu_clk         ;
+    wire            uart_clk        ;
+    wire            cpu_reset_n = pll_locked;
+    
     /*  ROM  */
     wire    [31:0]  rom_dout        ;
     wire    [10:0]  rom_addr        ;
@@ -163,16 +169,25 @@ module top(
     wire if_id_reg_clr = pc_src_id;
 
     /*  Instance  */
+    
+    pll u_pll(
+        .clk_in         (   clk             ),
+        .reset_n        (   reset_n         ),
+        .pll_locked     (   pll_locked      ),
+        .clk_out_0      (   cpu_clk         ),
+        .clk_out_1      (   uart_clk        )
+    );
+    
     rom  u_rom (
-        .clk            (   clk      ),
-        .aclr           (   ~reset_n        ),
+        .clk            (   cpu_clk         ),
+        .aclr           (   ~cpu_reset_n    ),
         .dout           (   rom_dout        ),
         .addr           (   rom_addr        ),
         .stall_pc       (   rom_stall       )
     );
     
     cu  u_cu (
-        .reset_n        (   reset_n         ),
+        .reset_n        (   cpu_reset_n     ),
         
         .op             (   cu_op           ),
         .funct          (   cu_funct        ),
@@ -187,8 +202,8 @@ module top(
     );
 
     register  u_register (
-        .clk            (   clk             ),
-        .reset_n        (   reset_n         ),
+        .clk            (   cpu_clk         ),
+        .reset_n        (   cpu_reset_n     ),
         .addr1          (   reg_addr1       ),
         .read1          (   reg_read1       ),
         .addr2          (   reg_addr2       ),
@@ -207,7 +222,7 @@ module top(
     );
 
     ram  u_ram (
-        .clk            (   clk             ),
+        .clk            (   cpu_clk         ),
         .we             (   ram_we          ),
         .addr           (   ram_addr        ),
         .data_read      (   ram_read        ),
@@ -225,8 +240,8 @@ module top(
     );
 
     terminal u_terminal (
-        .clk            (   clk             ),
-        .reset_n        (   reset_n         ),
+        .clk            (   cpu_clk         ),
+        .reset_n        (   cpu_reset_n     ),
         .we             (   terminal_we     ),
         .addr           (   terminal_addr   ),  
         .data_read      (   terminal_read   ),
@@ -263,9 +278,9 @@ module top(
     assign pc = pc_src_id ? pc_branch_id : pc_plus4_if;
 
     /*  PC Register  */
-    always @(posedge clk or negedge reset_n)
+    always @(posedge cpu_clk or negedge cpu_reset_n)
 	begin
-        if(!reset_n)
+        if(!cpu_reset_n)
             pc_if <= 11'h0;
         else
         begin
@@ -289,9 +304,9 @@ module top(
     assign rom_stall = pc_reg_stall;
 
     /*  IF/ID Register  */
-    always @(posedge clk or negedge reset_n)
+    always @(posedge cpu_clk or negedge cpu_reset_n)
 	begin
-        if(!reset_n)
+        if(!cpu_reset_n)
         begin
             instr_id <= 32'h0;
             pc_plus4_id <= 11'h0;
@@ -313,15 +328,15 @@ module top(
     end
 
     /*  cu  */
-    assign cu_op    = instr_id[31:26];
-    assign cu_funct = instr_id[5:0];
-    assign cu_reg_write_id = cu_reg_write;
-    assign cu_mem_to_reg_id = cu_mem_to_reg;
-    assign cu_mem_write_id = cu_mem_write;
-    assign cu_branch_id = cu_branch;
-    assign cu_alu_control_id = cu_alu_control;
-    assign cu_alu_src_id = cu_alu_src;
-    assign cu_reg_dst_id = cu_reg_dst;
+    assign cu_op                = instr_id[31:26];
+    assign cu_funct             = instr_id[5:0];
+    assign cu_reg_write_id      = cu_reg_write;
+    assign cu_mem_to_reg_id     = cu_mem_to_reg;
+    assign cu_mem_write_id      = cu_mem_write;
+    assign cu_branch_id         = cu_branch;
+    assign cu_alu_control_id    = cu_alu_control;
+    assign cu_alu_src_id        = cu_alu_src;
+    assign cu_reg_dst_id        = cu_reg_dst;
 
     /*  reg  */
     assign reg_addr1    = instr_id[25:21];
@@ -345,9 +360,9 @@ module top(
     assign signimm_id = {{16{instr_id[15]}},instr_id[15:0]};
 
     /*  ID/EX Register  */
-    always @(posedge clk or negedge reset_n)
+    always @(posedge cpu_clk or negedge cpu_reset_n)
 	begin
-        if(!reset_n)
+        if(!cpu_reset_n)
         begin
             cu_reg_write_ex <= 1'b0;
             cu_mem_to_reg_ex <= 1'b0;
@@ -447,9 +462,9 @@ module top(
     assign pc_branch_id = pc_branch_adder_id;
 
     /*  EX/MEM Register  */
-    always @(posedge clk or negedge reset_n)
+    always @(posedge cpu_clk or negedge cpu_reset_n)
 	begin
-        if(!reset_n)
+        if(!cpu_reset_n)
         begin
             cu_reg_write_mem <= 1'b0;
             cu_mem_to_reg_mem <= 1'b0;
@@ -514,9 +529,9 @@ module top(
     
 
     /*  MEM/WB Register  */
-    always @(posedge clk or negedge reset_n)
+    always @(posedge cpu_clk or negedge cpu_reset_n)
 	begin
-        if(!reset_n)
+        if(!cpu_reset_n)
         begin
             cu_reg_write_wb <= 1'b0;
             cu_mem_to_reg_wb <= 1'b0;
