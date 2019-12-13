@@ -85,4 +85,6 @@ set_global_assignment -name VERILOG_FILE ../../Src/hu.v
 set_global_assignment -name VERILOG_FILE ../../Src/terminal.v
 set_global_assignment -name VERILOG_FILE ../../Src/ioctl.v
 set_global_assignment -name VERILOG_FILE ../../Src/pll.v
+set_global_assignment -name VERILOG_FILE ../../Src/uart_tx_path.v
+set_global_assignment -name VERILOG_FILE ../../Src/uart_rx_path.v
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
