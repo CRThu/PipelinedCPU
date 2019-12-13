@@ -25,6 +25,8 @@ carrot's simple 5 stages pipelined cpu -- CRT8008
 | sw      | 101011  | *mem_addr | reg_addr | immH    | immM   | immL   |
 | beq     | 000100  | A_addr    | B_addr   | immH    | immM   | immL   |
 | addi    | 001000  | A_addr    | Y_addr   | immH    | immM   | immL   |
+| sll     | 000010  | A_addr    | Y_addr   | immH    | immM   | immL   |
+| srl     | 000011  | A_addr    | Y_addr   | immH    | immM   | immL   |
 | nop     | 111111  | x         | x        | x       | x      | x      |
 
 ## Instruction Introduce
@@ -56,6 +58,14 @@ if register A = B, Branch to Address = (imm << 2) + (PC + 4).
 ### when execute addi
 
 Y = A + imm.
+
+### when execute sll
+
+Y = A << imm[4:0].
+
+### when execute srl
+
+Y = A >> imm[4:0].
 
 ### when execute nop
 
