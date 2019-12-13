@@ -8,7 +8,6 @@
 `endif
 
 `define __ROM_TEST_INSTR__
-//`define __ROM_WAWEI_TERMINAL__
 
 
 
@@ -34,19 +33,11 @@ module top_tb;
         `ifndef __QUARTUS__
             `ifdef __ROM_TEST_INSTR__
                 $readmemh("../Sim/rom_test_instr.dat",u_top.u_rom.rom_block);
-            `else
-            `ifdef __ROM_WAWEI_TERMINAL__
-                $readmemh("../Sim/rom_wawei_terminal.dat",u_top.u_rom.rom_block);
-            `endif
             `endif
         `else
             `ifndef __IP_SPROM__
                 `ifdef __ROM_TEST_INSTR__
                     $readmemh("../../../../Sim/rom_test_instr.dat",u_top.u_rom.rom_block);
-                `else
-                `ifdef __ROM_WAWEI_TERMINAL__
-                    $readmemh("../../../../Sim/rom_wawei_terminal.dat",u_top.u_rom.rom_block);
-                `endif
                 `endif
              `endif
         `endif
@@ -56,19 +47,11 @@ module top_tb;
 
         `ifndef __QUARTUS__
             `ifdef __ROM_TEST_INSTR__
-                #500 $finish;
-            `else
-            `ifdef __ROM_WAWEI_TERMINAL__
-                #2000 $finish;
-            `endif
+                #350 $finish;
             `endif
         `else
             `ifdef __ROM_TEST_INSTR__
-                #500 $stop;
-            `else
-            `ifdef __ROM_WAWEI_TERMINAL__
-                #2000 $stop;
-            `endif
+                #350 $stop;
             `endif
         `endif
     end

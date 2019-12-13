@@ -20,8 +20,8 @@ module terminal(
     
     
     //wire terminal_data_changed;
-    reg [7:0] uart_tx_buf = 8'h0;
-    reg terminal_data_changed = 1'b0;
+    //reg [7:0] uart_tx_buf = 8'h0;
+    //reg terminal_data_changed = 1'b0;
     reg [7:0] uart_rx_buf = 8'hCC;  // for test,  8'hCC
     reg uart_rx_done_flag = 1'b1;   // for test,  1'b1
     
@@ -35,7 +35,7 @@ module terminal(
         begin
             terminal_bus <= 8'h0;
             terminal_block <= 128'h0;
-            terminal_data_changed <= 1'b0;
+            //terminal_data_changed <= 1'b0;
         end
         else
         begin
@@ -48,15 +48,15 @@ module terminal(
                         terminal_bus <= data_write[7:0];
                         terminal_block <= (terminal_block << 8) + data_write[7:0];
                     end
-                    32'h1:
-                    begin
-                        uart_tx_buf <= data_write[7:0];
-                    end
-                    32'h2:
-                    begin
-                        if(data_write == 32'b1)
-                            terminal_data_changed <= 1'b1;
-                    end
+                    //32'h1:
+                    //begin
+                        //uart_tx_buf <= data_write[7:0];
+                    //end
+                    //32'h2:
+                    //begin
+                        //if(data_write == 32'b1)
+                            //terminal_data_changed <= 1'b1;
+                    //end
                     32'h4:
                     begin
                         uart_rx_done_flag <= data_write[0];
@@ -74,32 +74,26 @@ module terminal(
     
     always@(*)
     begin
-        if(!we)
-        begin
-            /*  read  */
-            case(addr)
-                32'h3:
-                begin
-                    data_read <= {24'b0,uart_rx_buf};
-                end
-                32'h4:
-                begin
-                    data_read <= {31'b0, uart_rx_done_flag};
-                end
-                default:
-                begin
-                end
-            endcase
-        end
-        else
-        begin
-            data_read <= 32'hx;
-        end
+        /*  read  */
+        case(addr)
+            32'h3:
+            begin
+                data_read <= {24'b0,uart_rx_buf};
+            end
+            32'h4:
+            begin
+                data_read <= {31'b0, uart_rx_done_flag};
+            end
+            default:
+            begin
+                data_read <= 32'b0;
+            end
+        endcase
     end
     
-    always@(negedge clk)
-    begin
-        terminal_data_changed <= 1'b0;
-    end
+    //always@(negedge clk)
+    //begin
+        //terminal_data_changed <= 1'b0;
+    //end
 
 endmodule // terminal
